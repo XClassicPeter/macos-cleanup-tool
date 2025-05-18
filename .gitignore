@@ -1,0 +1,14 @@
+# Generated files
+cleanup.log
+settings.json
+*.pyc
+__pycache__/
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Python
+*.egg-info/
+.pytest_cache/
