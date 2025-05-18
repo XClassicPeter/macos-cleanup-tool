@@ -36,7 +36,7 @@ class CleanupApp:
     def __init__(self, root):
         self.root = root
         self.root.title("MacOS Cleanup Tool")
-        self.root.geometry("1050x640")
+        self.root.geometry("1280x640")
         self.items = []
         self.display_items = []
         self.scan_queue = queue.Queue()
