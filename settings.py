@@ -7,14 +7,19 @@ SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settin
 DEFAULTS = {
     "last_scan_path": os.path.expanduser("~"),
     "size_filter": "All",
-    "max_depth": 1,
+    "max_depth": 3,
     "exclusions": "",
     "dark_mode": "auto",
     "sort_column": "size",
     "sort_descending": True,
     "plugins": {
         "python": True,
-        "nodejs": True
+        "nodejs": True,
+        "python_installs": True,
+        "system_cleanup": True,
+        "developer_tools": True,
+        "llm_frameworks": True,
+        "virtual_machines": True
     }
 }
 
