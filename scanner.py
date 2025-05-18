@@ -138,7 +138,13 @@ def scan_folder(folder, category, progress_callback=lambda c, p: None, max_depth
     folder = os.path.expanduser(folder)
     if not os.path.isdir(folder) or _should_exclude(folder, exclusions):
         return items
+    
+    # Track directories scanned for progress estimation
+    dir_count = 0
+    total_dirs_estimated = 100  # Rough estimate; adjust if needed
+
     def scan_recursive(path, depth, current_category):
+        nonlocal dir_count
         if depth > max_depth:
             return
         try:
@@ -146,6 +152,7 @@ def scan_folder(folder, category, progress_callback=lambda c, p: None, max_depth
                 if _should_exclude(entry.path, exclusions):
                     continue
                 if entry.is_dir(follow_symlinks=False):
+                    dir_count += 1
                     size = get_size(entry.path)
                     if size != "0B":
                         items.append({
@@ -155,12 +162,16 @@ def scan_folder(folder, category, progress_callback=lambda c, p: None, max_depth
                             "path": entry.path,
                             "size": size
                         })
+                    # Send progress update (cap at 99% to avoid premature 100%)
+                    progress = min(99, (dir_count / total_dirs_estimated) * 100)
+                    progress_callback(current_category, progress)
+                    logger.debug(f"Progress: {current_category} ({progress:.1f}%)")
                     scan_recursive(entry.path, depth + 1, current_category)
         except (PermissionError, OSError) as e:
             logger.error(f"Error scanning {path}: {e}")
+
     scan_recursive(folder, 1, category)
-    total_items = len(items)
-    for idx, item in enumerate(items):
-        progress_callback(category, (idx + 1) / total_items * 100 if total_items else 100)
-    logger.info(f"Folder scan completed: {folder}")
+    # Final progress update
+    progress_callback(category, 100)
+    logger.info(f"Folder scan completed: {folder}, {len(items)} items found")
     return items
