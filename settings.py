@@ -7,7 +7,7 @@ SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settin
 DEFAULTS = {
     "last_scan_path": os.path.expanduser("~"),
     "size_filter": "All",
-    "max_depth": 3,
+    "max_depth": 1,
     "exclusions": "",
     "dark_mode": "auto",
     "sort_column": "size",
