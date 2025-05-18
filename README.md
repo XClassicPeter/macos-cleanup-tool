@@ -30,16 +30,41 @@ Filter by size (dropdown or custom MB) or search (e.g., "pip").
 
 Right-click items to Open in Finder (Cmd+F), Move to Trash (Cmd+T), or Clean Folder (Cmd+E).
 
-Toggle plugins (Python, Nodejs, Python Installs) in the Plugins menu.
+Toggle plugins (Python, Nodejs, Python Installs) in the `settings.py` file.
 
-Check cleanup.log for errors.
+Check `cleanup.log` for errors.
 
 ## Plugins
-Python: Pip caches, __pycache__, Python history.
 
-Nodejs: Npm caches, node_modules.
+The macOS Cleanup Tool uses a plugin system to scan specific types of temporary files, caches, and artifacts. Each plugin targets a category of cleanup tasks, helping you reclaim disk space. All plugins are enabled by default and can be toggled in the **Plugins** menu. Below is a list of available plugins and what they scan:
 
-Python Installs: System Python, Homebrew, pyenv installations.
+- **Python**: Python-related caches and temporary files.
+  - Paths: `~/Library/Caches/pip`, `~/.cache/pip`, `~/.python_history`, `~/.ipython/`, `__pycache__` directories.
+  - Categories: Pip Cache, Python History, IPython History, Python Cache.
+
+- **Node.js**: Node.js-related caches and modules.
+  - Paths: `~/Library/Caches/npm`, `~/.npm`, `node_modules` directories.
+  - Categories: NPM Cache, Node.js Cache.
+
+- **Python Installs**: Python installations and virtual environments.
+  - Paths: `/Library/Frameworks/Python.framework`, `/usr/local/Cellar/python@*`, `~/.pyenv`, `~/miniconda3/envs`, virtual environments (`venv` with `pyvenv.cfg`).
+  - Categories: System Python, Homebrew Python, Pyenv Install, Conda Environment, Virtual Environment.
+
+- **System Cleanup**: General macOS caches, logs, and crash reports.
+  - Paths: `/Library/Caches`, `~/Library/Caches`, `/Library/Logs`, `~/Library/Logs`, `~/Library/Logs/DiagnosticReports`, `/Library/Logs/DiagnosticReports`.
+  - Categories: System Cache, User Cache, System Logs, User Logs, Crash Reports.
+
+- **Developer Tools**: Artifacts from Apple development and package managers.
+  - Paths: `~/Library/Developer/Xcode/DerivedData`, `~/Library/Developer/Xcode/Archives`, `~/Library/Caches/Homebrew`, `~/Library/Caches/CocoaPods`, `~/.gem`, `~/.cache/yarn`.
+  - Categories: Xcode Artifacts, Homebrew Cache, CocoaPods Cache, Ruby Gems, Yarn Cache.
+
+- **LLM Frameworks**: Caches and logs from local AI/ML frameworks.
+  - Paths: `~/.ollama/models`, `~/.cache/lm_studio`, `~/.cache/llama_cpp`, `~/.cache/vllm`, `~/.localai/{models,logs}`.
+  - Categories: Ollama Cache, LM Studio Cache, LLaMA.cpp Cache, vLLM Cache, LocalAI Cache.
+
+- **Virtual Machines**: Disk images, snapshots, and caches from virtualization software.
+  - Paths: `~/Parallels`, `~/Documents/Parallels`, `~/Library/Parallels`, `~/vmware`, `~/Documents/Virtual Machines`, `~/VirtualBox VMs`, `~/Library/VirtualBox`, `~/.qemu`, `~/Library/Containers/com.utmapp.UTM/Data/Documents`, `~/Documents/UTM`, `~/Library/Logs/UTM`.
+  - Categories: Parallels VM, VMware VM, VirtualBox VM, QEMU VM, UTM VM.
 
 ## Contributing
 This is a hobby project with limited maintenance time. Please:
