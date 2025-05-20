@@ -1,35 +1,63 @@
 # macOS Cleanup Tool
 
-A lightweight Python GUI tool to clean up temporary files and caches on macOS. This is a hobby project to help users free up disk space, with plugins for Python, Node.js, and Python installations.
+A lightweight, extensible Python GUI for cleaning up temporary files and caches on macOS. Designed to help users reclaim disk space, it features a plugin system for targeting Python, Node.js, system, and other cache types.
+
+---
 
 ## Features
-- Scan system temps or folders with size filtering (100MB+, 500MB+, 1GB+).
-- Real-time search by category, name, or path.
-- Persistent column sorting (size, name, etc.).
-- Plugins for Python caches, Node.js caches, and Python installations.
-- Move items to Trash with undo support.
-- Dark/light mode support.
-- Logs to `cleanup.log` for debugging.
+
+- Scan system and user temp folders with size filtering (100MB+, 500MB+, 1GB+)
+- Real-time search by category, name, or path
+- Persistent column sorting (size, name, etc.)
+- Move items to Trash with undo support
+- Dark/light mode support
+- Logging to `cleanup.log` for debugging
+- Extensible plugin system (see below)
+
+---
 
 ## Installation
-Requires Python 3.13 and Tk 8.6 (included with macOS Python).
 
+**Requirements:**
+- Python 3.13 or newer
+- Tk 8.6 (included with macOS Python)
+
+**Setup:**
 ```bash
 pip install send2trash
+# Clone the repository
 git clone https://github.com/XClassicPeter/macos-cleanup-tool.git
 cd macos-cleanup-tool
 python cleanup.py
 ```
 
+---
+
 ## Usage
-Launch: python cleanup.py
 
-Click "Scan System" or "Home" to scan.
+- **Launch:**
+  ```bash
+  python cleanup.py
+  ```
+- **Scan:**
+  Click "Scan System" or "Home" to scan for files.
+- **Filter:**
+  Use the size dropdown or enter a custom MB value. Search by keyword (e.g., "pip").
+- **Actions:**
+  - Right-click items for:
+    - Open in Finder (`Cmd+F`)
+    - Move to Trash (`Cmd+T`)
+    - Clean Folder (`Cmd+E`)
+- **Plugins:**
+  Manage plugins from the Plugins button in the Settings section or from the Plugins menu in the menubar. Enable/disable plugins with checkmarks. All valid plugins in the `plugins/` folder are always listed.
+- **Logs:**
+  Check `cleanup.log` for errors or debugging info.
 
-Filter by size (dropdown or custom MB) or search (e.g., "pip").
+---
 
-Right-click items to Open in Finder (Cmd+F), Move to Trash (Cmd+T), or Clean Folder (Cmd+E).
+## Plugin System
 
+<<<<<<< HEAD
 Toggle plugins (Python, Nodejs, Python Installs) in the `settings.py` file.
 
 Check `cleanup.log` for errors.
@@ -65,20 +93,91 @@ The macOS Cleanup Tool uses a plugin system to scan specific types of temporary 
 - **Virtual Machines**: Disk images, snapshots, and caches from virtualization software.
   - Paths: `~/Parallels`, `~/Documents/Parallels`, `~/Library/Parallels`, `~/vmware`, `~/Documents/Virtual Machines`, `~/VirtualBox VMs`, `~/Library/VirtualBox`, `~/.qemu`, `~/Library/Containers/com.utmapp.UTM/Data/Documents`, `~/Documents/UTM`, `~/Library/Logs/UTM`.
   - Categories: Parallels VM, VMware VM, VirtualBox VM, QEMU VM, UTM VM.
+=======
+The cleanup tool is built around a flexible plugin system. Each plugin targets a specific set of caches, logs, or temporary files. Plugins are located in the `plugins/` directory and are auto-discovered at runtime.
+
+### Built-in Plugins
+
+- **System Cleanup:**
+  - Scans and cleans system/user caches and logs (see `plugins/system_cleanup.py`).
+- **Python:**
+  - Cleans pip caches, `__pycache__`, Python history (see `plugins/python.py`).
+- **Node.js:**
+  - Cleans npm caches, `node_modules` (see `plugins/nodejs.py`).
+- **Python Installs:**
+  - Cleans system Python, Homebrew, and pyenv installations (see `plugins/python_installs.py`).
+- **Virtual Machines:**
+  - Cleans Parallels, UTM, and related VM files (see `plugins/virtual_machines.py`).
+- **LLM Frameworks, Developer Tools:**
+  - Cleans caches for machine learning and development tools (see respective plugin files).
+
+### Using Plugins
+
+- Enable or disable plugins from the Plugins button in Settings or from the Plugins menu in the menubar.
+- Each plugin can be toggled independently. Checkmarks indicate enabled plugins.
+- Plugin actions and scan results are integrated into the main UI.
+
+### Developing Plugins
+
+1. **Create a new file** in `plugins/` (e.g., `my_plugin.py`).
+2. **Inherit from `PluginBase`:**
+    ```python
+    from plugins.plugin_base import PluginBase
+
+    class Plugin(PluginBase):
+        def __init__(self):
+            super().__init__()
+            self.logger.info("My Plugin initialized")
+
+        def scan(self):
+            items = []
+            # ... populate items ...
+            return items
+    ```
+3. **Implement the `scan()` method:**
+    - Return a list of dicts with keys: `category`, `name`, `short_name`, `path`, `size`.
+    - Use `get_size(path)` from `scanner.py` for size calculation.
+    - Use logging for debug/info.
+4. **Test your plugin:**
+    - Launch the app and enable your plugin from the Plugins menu.
+    - Check `cleanup.log` for output and errors.
+
+**Best Practices:**
+- Avoid scanning or deleting critical system files.
+- Use exclusions for files handled by other plugins.
+- Log actions for traceability.
+
+---
+
+## Troubleshooting & FAQ
+
+- **Permissions:** Some folders may require elevated permissions. Run with appropriate rights if needed.
+- **Missing dependencies:** Ensure `send2trash` is installed.
+- **Logs:** Check `cleanup.log` for errors and debugging info.
+
+---
+>>>>>>> f1864fc (v1.0.1: Robust plugin discovery, improved plugin management UI, persistent checkmarks, and bug fixes\n\n- Plugin discovery now uses importlib and class inspection (only valid PluginBase subclasses are listed)\n- Plugins menu always lists all valid plugins, checkmarks are persistent and visible\n- Plugins button moved to Settings section\n- Improved error handling and logging for plugin loading\n- Updated documentation and changelog for v1.0.1\n- Minor code cleanup and UI improvements\n- Security: safer plugin loading and critical path protection)
 
 ## Contributing
-This is a hobby project with limited maintenance time. Please:
-Report bugs via GitHub Issues.
 
-Suggest features, but note limited capacity for review.
+- Report bugs via [GitHub Issues](https://github.com/XClassicPeter/macos-cleanup-tool/issues).
+- Suggest features (note limited capacity for review).
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-See CONTRIBUTING.md for details.
+---
 
 ## License
-MIT License. See LICENSE.
+
+MIT License. See [LICENSE](LICENSE).
+
+---
 
 ## Notice
-The concept and implementation of macOS Cleanup Tool are owned by Peter. See NOTICE for details.
+
+The concept and implementation of macOS Cleanup Tool are owned by Peter. See [NOTICE](NOTICE) for details.
+
+---
 
 ## Contact
-File issues at GitHub Issues.
+
+File issues or questions via [GitHub Issues](https://github.com/XClassicPeter/macos-cleanup-tool/issues).

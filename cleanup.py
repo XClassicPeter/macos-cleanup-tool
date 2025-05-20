@@ -249,6 +249,9 @@ class CleanupApp:
         self.excl_entry.pack(side="left")
         self.excl_entry.bind("<FocusOut>", lambda e: self.on_exclusions_change())
         self.excl_entry.bind("<Return>", lambda e: self.on_exclusions_change())
+        # Plugins button in Settings
+        self.plugins_btn = ttk.Button(settings_frame, text="Plugins", command=self.show_plugins_menu)
+        self.plugins_btn.pack(side="left", padx=8)
 
         # Separator
         ttk.Separator(bottom_frame, orient="vertical").pack(side="left", padx=5, fill="y")
@@ -296,22 +299,56 @@ class CleanupApp:
         self.root.bind("<Command-e>", lambda event: self.clean_folder())
 
     def update_plugins_menu(self):
+        import glob
+        import os
+        import importlib.util
         self.plugins_menu.delete(0, tk.END)
-        plugins = self.app_settings.get("plugins", {})
-        for plugin_name in plugins:
-            enabled = plugins[plugin_name]
+        # Discover all plugins in the plugins folder using importlib and class inspection
+        plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
+        plugin_files = glob.glob(os.path.join(plugins_dir, "*.py"))
+        plugin_names = []
+        for f in plugin_files:
+            base = os.path.basename(f)
+            if base in ["__init__", "plugin_base"]:
+                continue
+            module_name = os.path.splitext(base)[0]
+            spec = importlib.util.spec_from_file_location(module_name, f)
+            if not spec or not spec.loader:
+                continue
+            module = importlib.util.module_from_spec(spec)
+            try:
+                spec.loader.exec_module(module)
+            except Exception:
+                continue
+            # Only include plugins that define a Plugin class subclassing PluginBase
+            if hasattr(module, "Plugin"):
+                plugin_class = getattr(module, "Plugin")
+                from plugins.plugin_base import PluginBase
+                if isinstance(plugin_class, type) and issubclass(plugin_class, PluginBase):
+                    plugin_names.append(module_name)
+        # Get enabled/disabled state from settings
+        plugins_state = self.app_settings.get("plugins", {})
+        self._plugin_vars = {}  # Store BooleanVars to keep them alive
+        for plugin_name in sorted(plugin_names):
+            enabled = plugins_state.get(plugin_name, True)
+            var = tk.BooleanVar(value=enabled)
+            self._plugin_vars[plugin_name] = var  # Prevent garbage collection
             self.plugins_menu.add_checkbutton(
-                label=plugin_name.capitalize(),
+                label=plugin_name.replace('_', ' ').capitalize(),
                 command=lambda pn=plugin_name: self.toggle_plugin(pn),
-                variable=tk.BooleanVar(value=enabled)
+                variable=var,
+                onvalue=True,
+                offvalue=False
             )
         self.logger.info("Updated plugins menu")
 
     def toggle_plugin(self, plugin_name):
         plugins = self.app_settings.get("plugins", {})
-        plugins[plugin_name] = not plugins.get(plugin_name, True)
+        current = plugins.get(plugin_name, True)
+        plugins[plugin_name] = not current
         self.app_settings["plugins"] = plugins
         self.save_settings()
+        self.update_plugins_menu()
         self.logger.info(f"Toggled plugin {plugin_name} to {plugins[plugin_name]}")
 
     def show_help(self):
@@ -319,6 +356,11 @@ class CleanupApp:
             "Keyboard Shortcuts",
             "Cmd+F: Open in Finder\nCmd+T: Move to Trash\nCmd+E: Clean Folder"
         )
+
+    def show_plugins_menu(self):
+        x = self.plugins_btn.winfo_rootx()
+        y = self.plugins_btn.winfo_rooty() + self.plugins_btn.winfo_height()
+        self.plugins_menu.post(x, y)
 
     def on_depth_change(self):
         try:
@@ -507,6 +549,9 @@ class CleanupApp:
         self.actions_btn.config(
             state="normal" if has_selection and not self.is_scanning else "disabled"
         )
+        self.plugins_btn.config(
+            state="normal" if not self.is_scanning else "disabled"
+        )
         self.undo_btn.config(
             state="normal" if self.deleted_paths else "disabled"
         )
@@ -619,47 +664,46 @@ class CleanupApp:
             self.logger.warning(f"Attempted to clean critical path: {full_path}")
             messagebox.showwarning("Warning", f"Cannot clean critical system folder: {full_path}")
             return
-        if messagebox.askyesno("Confirm Clean", f"Move all contents of {full_path} to Trash?"):
-            try:
-                had_errors = False
-                for item in os.listdir(full_path):
-                    item_path = os.path.join(full_path, item)
-                    for _ in range(3):
-                        try:
-                            if subprocess.run(["lsof", item_path], capture_output=True).returncode == 0:
-                                time.sleep(0.5)
-                                continue
-                            send2trash.send2trash(item_path)
-                            self.deleted_paths.append(item_path)
-                            self.logger.info(f"Trashed {item_path}")
-                            break
-                        except Exception as e:
-                            had_errors = True
-                            self.logger.error(f"Failed to trash {item_path}: {e}")
-                            break
-                self.items = [item for item in self.items if item["path"] != path]
-                self.items.append({
-                    "category": self.selected_item["category"],
-                    "name": self.selected_item["name"],
-                    "short_name": self.selected_item["name"],
-                    "path": path,
-                    "size": get_size(path),
-                })
-                self.apply_filter()
-                self.set_status(f"Cleaned contents of {full_path} to Trash")
-                self.selected_item = None
-                self.update_button_states()
-                self.logger.info(f"Cleaned folder {full_path}")
-                if had_errors:
-                    messagebox.showwarning("Partial Clean", f"Some items in {full_path} could not be trashed.\nSee cleanup.log for details.")
-            except PermissionError as e:
-                self.logger.error(f"Permission denied for {full_path}: {e}")
-                messagebox.showerror("Error", f"Permission denied for some items in {full_path}. Check permissions.\nSee cleanup.log for details.")
-                self.set_status("Error cleaning folder")
-            except Exception as e:
-                self.logger.error(f"Could not clean {full_path}: {e}")
-                messagebox.showerror("Error", f"Could not clean {full_path}: {e}\nSee cleanup.log for details.")
-                self.set_status("Error cleaning folder")
+        try:
+            had_errors = False
+            for item in os.listdir(full_path):
+                item_path = os.path.join(full_path, item)
+                for _ in range(3):
+                    try:
+                        if subprocess.run(["lsof", item_path], capture_output=True).returncode == 0:
+                            time.sleep(0.5)
+                            continue
+                        send2trash.send2trash(item_path)
+                        self.deleted_paths.append(item_path)
+                        self.logger.info(f"Trashed {item_path}")
+                        break
+                    except Exception as e:
+                        had_errors = True
+                        self.logger.error(f"Failed to trash {item_path}: {e}")
+                        break
+            self.items = [item for item in self.items if item["path"] != path]
+            self.items.append({
+                "category": self.selected_item["category"],
+                "name": self.selected_item["name"],
+                "short_name": self.selected_item["name"],
+                "path": path,
+                "size": get_size(path),
+            })
+            self.apply_filter()
+            self.set_status(f"Cleaned contents of {full_path} to Trash")
+            self.selected_item = None
+            self.update_button_states()
+            self.logger.info(f"Cleaned folder {full_path}")
+            if had_errors:
+                messagebox.showwarning("Partial Clean", f"Some items in {full_path} could not be trashed.\nSee cleanup.log for details.")
+        except PermissionError as e:
+            self.logger.error(f"Permission denied for {full_path}: {e}")
+            messagebox.showerror("Error", f"Permission denied for some items in {full_path}. Check permissions.\nSee cleanup.log for details.")
+            self.set_status("Error cleaning folder")
+        except Exception as e:
+            self.logger.error(f"Could not clean {full_path}: {e}")
+            messagebox.showerror("Error", f"Could not clean {full_path}: {e}\nSee cleanup.log for details.")
+            self.set_status("Error cleaning folder")
 
     def go_deep(self):
         if not self.selected_item or not os.path.isdir(os.path.expanduser(self.selected_item["path"])):
