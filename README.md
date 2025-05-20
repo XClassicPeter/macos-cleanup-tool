@@ -148,7 +148,7 @@ MIT License. See [LICENSE](LICENSE).
 
 ## Notice
 
-The concept and implementation of macOS Cleanup Tool are owned by Peter. See [NOTICE](NOTICE) for details.
+The concept and implementation of macOS Cleanup Tool are owned by XClassicPeter. See [NOTICE](NOTICE) for details.
 
 ---
 

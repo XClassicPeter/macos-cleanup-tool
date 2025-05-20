@@ -1,5 +1,5 @@
 # macOS Cleanup Tool
-# Copyright (c) 2025 Peter
+# Copyright (c) 2025 XClassicPeter
 # Licensed under the MIT License. See LICENSE for details.
 
 import os
