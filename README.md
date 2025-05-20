@@ -57,59 +57,19 @@ python cleanup.py
 
 ## Plugin System
 
-<<<<<<< HEAD
-Toggle plugins (Python, Nodejs, Python Installs) in the `settings.py` file.
-
-Check `cleanup.log` for errors.
-
-## Plugins
-
-The macOS Cleanup Tool uses a plugin system to scan specific types of temporary files, caches, and artifacts. Each plugin targets a category of cleanup tasks, helping you reclaim disk space. All plugins are enabled by default and can be toggled in the **Plugins** menu. Below is a list of available plugins and what they scan:
-
-- **Python**: Python-related caches and temporary files.
-  - Paths: `~/Library/Caches/pip`, `~/.cache/pip`, `~/.python_history`, `~/.ipython/`, `__pycache__` directories.
-  - Categories: Pip Cache, Python History, IPython History, Python Cache.
-
-- **Node.js**: Node.js-related caches and modules.
-  - Paths: `~/Library/Caches/npm`, `~/.npm`, `node_modules` directories.
-  - Categories: NPM Cache, Node.js Cache.
-
-- **Python Installs**: Python installations and virtual environments.
-  - Paths: `/Library/Frameworks/Python.framework`, `/usr/local/Cellar/python@*`, `~/.pyenv`, `~/miniconda3/envs`, virtual environments (`venv` with `pyvenv.cfg`).
-  - Categories: System Python, Homebrew Python, Pyenv Install, Conda Environment, Virtual Environment.
-
-- **System Cleanup**: General macOS caches, logs, and crash reports.
-  - Paths: `/Library/Caches`, `~/Library/Caches`, `/Library/Logs`, `~/Library/Logs`, `~/Library/Logs/DiagnosticReports`, `/Library/Logs/DiagnosticReports`.
-  - Categories: System Cache, User Cache, System Logs, User Logs, Crash Reports.
-
-- **Developer Tools**: Artifacts from Apple development and package managers.
-  - Paths: `~/Library/Developer/Xcode/DerivedData`, `~/Library/Developer/Xcode/Archives`, `~/Library/Caches/Homebrew`, `~/Library/Caches/CocoaPods`, `~/.gem`, `~/.cache/yarn`.
-  - Categories: Xcode Artifacts, Homebrew Cache, CocoaPods Cache, Ruby Gems, Yarn Cache.
-
-- **LLM Frameworks**: Caches and logs from local AI/ML frameworks.
-  - Paths: `~/.ollama/models`, `~/.cache/lm_studio`, `~/.cache/llama_cpp`, `~/.cache/vllm`, `~/.localai/{models,logs}`.
-  - Categories: Ollama Cache, LM Studio Cache, LLaMA.cpp Cache, vLLM Cache, LocalAI Cache.
-
-- **Virtual Machines**: Disk images, snapshots, and caches from virtualization software.
-  - Paths: `~/Parallels`, `~/Documents/Parallels`, `~/Library/Parallels`, `~/vmware`, `~/Documents/Virtual Machines`, `~/VirtualBox VMs`, `~/Library/VirtualBox`, `~/.qemu`, `~/Library/Containers/com.utmapp.UTM/Data/Documents`, `~/Documents/UTM`, `~/Library/Logs/UTM`.
-  - Categories: Parallels VM, VMware VM, VirtualBox VM, QEMU VM, UTM VM.
-=======
 The cleanup tool is built around a flexible plugin system. Each plugin targets a specific set of caches, logs, or temporary files. Plugins are located in the `plugins/` directory and are auto-discovered at runtime.
 
 ### Built-in Plugins
 
-- **System Cleanup:**
-  - Scans and cleans system/user caches and logs (see `plugins/system_cleanup.py`).
-- **Python:**
-  - Cleans pip caches, `__pycache__`, Python history (see `plugins/python.py`).
-- **Node.js:**
-  - Cleans npm caches, `node_modules` (see `plugins/nodejs.py`).
-- **Python Installs:**
-  - Cleans system Python, Homebrew, and pyenv installations (see `plugins/python_installs.py`).
-- **Virtual Machines:**
-  - Cleans Parallels, UTM, and related VM files (see `plugins/virtual_machines.py`).
-- **LLM Frameworks, Developer Tools:**
-  - Cleans caches for machine learning and development tools (see respective plugin files).
+- **Python**: Pip caches, `__pycache__`, Python history
+- **Node.js**: Npm caches, `node_modules`
+- **Python Installs**: System Python, Homebrew, pyenv installations
+- **System Cleanup**: System/user caches, logs, crash reports
+- **Developer Tools**: Xcode, Homebrew, CocoaPods, Ruby Gems, Yarn
+- **LLM Frameworks**: Ollama, LM Studio, LLaMA.cpp, vLLM, LocalAI
+- **Virtual Machines**: Parallels, VMware, VirtualBox, QEMU, UTM
+
+See the `plugins/` folder for details on each plugin's targets.
 
 ### Using Plugins
 
@@ -120,32 +80,47 @@ The cleanup tool is built around a flexible plugin system. Each plugin targets a
 ### Developing Plugins
 
 1. **Create a new file** in `plugins/` (e.g., `my_plugin.py`).
-2. **Inherit from `PluginBase`:**
-    ```python
-    from plugins.plugin_base import PluginBase
+2. **Inherit from `PluginBase` and implement the `scan()` method.**
 
-    class Plugin(PluginBase):
-        def __init__(self):
-            super().__init__()
-            self.logger.info("My Plugin initialized")
+**Example:**
+```python
+from plugins.plugin_base import PluginBase
+from scanner import get_size
+import os
 
-        def scan(self):
-            items = []
-            # ... populate items ...
-            return items
-    ```
-3. **Implement the `scan()` method:**
-    - Return a list of dicts with keys: `category`, `name`, `short_name`, `path`, `size`.
-    - Use `get_size(path)` from `scanner.py` for size calculation.
-    - Use logging for debug/info.
-4. **Test your plugin:**
-    - Launch the app and enable your plugin from the Plugins menu.
-    - Check `cleanup.log` for output and errors.
+class Plugin(PluginBase):
+    def __init__(self):
+        super().__init__()
+        self.logger.info("MyPlugin initialized")
+
+    def scan(self):
+        items = []
+        # Example: Find all .log files in ~/Desktop
+        desktop = os.path.expanduser("~/Desktop")
+        for fname in os.listdir(desktop):
+            if fname.endswith(".log"):
+                path = os.path.join(desktop, fname)
+                items.append({
+                    "category": "Custom Logs",
+                    "name": fname,
+                    "short_name": fname,
+                    "path": path,
+                    "size": get_size(path),
+                })
+        return items
+```
 
 **Best Practices:**
+- Return a list of dicts with keys: `category`, `name`, `short_name`, `path`, `size`.
+- Use `get_size(path)` from `scanner.py` for size calculation.
+- Use logging for debug/info.
 - Avoid scanning or deleting critical system files.
 - Use exclusions for files handled by other plugins.
 - Log actions for traceability.
+
+**Testing:**
+- Launch the app and enable your plugin from the Plugins menu.
+- Check `cleanup.log` for output and errors.
 
 ---
 
@@ -156,7 +131,6 @@ The cleanup tool is built around a flexible plugin system. Each plugin targets a
 - **Logs:** Check `cleanup.log` for errors and debugging info.
 
 ---
->>>>>>> f1864fc (v1.0.1: Robust plugin discovery, improved plugin management UI, persistent checkmarks, and bug fixes\n\n- Plugin discovery now uses importlib and class inspection (only valid PluginBase subclasses are listed)\n- Plugins menu always lists all valid plugins, checkmarks are persistent and visible\n- Plugins button moved to Settings section\n- Improved error handling and logging for plugin loading\n- Updated documentation and changelog for v1.0.1\n- Minor code cleanup and UI improvements\n- Security: safer plugin loading and critical path protection)
 
 ## Contributing
 
