@@ -23,6 +23,11 @@ class Plugin(PluginBase):
             (os.path.expanduser("~/Library/Containers/com.utmapp.UTM/Data/Documents"), "UTM VM"),
             (os.path.expanduser("~/Documents/UTM"), "UTM VM"),
             (os.path.expanduser("~/Library/Logs/UTM"), "UTM VM"),
+            (os.path.expanduser("~/.wine"), "Wine"),
+            (os.path.expanduser("~/Library/Application Support/com.codeweavers.CrossOver"), "CrossOver"),
+            (os.path.expanduser("~/Library/Application Support/Heroic"), "Heroic Games Launcher"),
+            (os.path.expanduser("~/Library/Containers/com.isaacmarovitz.Whisky"), "Whisky"),
+            (os.path.expanduser("~/Library/Application Support/CrossOver"), "CrossOver"),
         ]
 
         for path, category in paths:

@@ -14,10 +14,14 @@ class Plugin(PluginBase):
         paths = [
             (os.path.expanduser("~/.ollama/models"), "Ollama Cache"),
             (os.path.expanduser("~/.cache/lm_studio"), "LM Studio Cache"),
+            (os.path.expanduser("~/Library/Application Support/LM Studio"), "LM Studio Data"),
             (os.path.expanduser("~/.cache/llama_cpp"), "LLaMA.cpp Cache"),
             (os.path.expanduser("~/.cache/vllm"), "vLLM Cache"),
             (os.path.expanduser("~/.localai/models"), "LocalAI Cache"),
             (os.path.expanduser("~/.localai/logs"), "LocalAI Logs"),
+            (os.path.expanduser("~/.cache/huggingface"), "HuggingFace Cache"),
+            (os.path.expanduser("~/Library/Caches/huggingface"), "HuggingFace Cache"),
+            (os.path.expanduser("~/.cache/transformers"), "Transformers Cache"),
         ]
 
         for path, category in paths:
